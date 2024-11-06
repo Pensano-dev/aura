@@ -1,10 +1,27 @@
 #!/bin/sh
 
+# Exit if any command fails
+set -e
+
 # Navigate to the root directory of the repository
 cd "$(git rev-parse --show-toplevel)"
 
-# Navigate to frontend directory and run linting
-(cd frontend && npm run lint:fix)
+# Ensure node modules are installed before running linting
+if [ ! -d "frontend/node_modules" ]; then
+  echo "Node modules not found in frontend. Installing..."
+  cd frontend && npm install
+fi
 
-# Navigate to backend directory and run linting
-(cd backend && npm run lint:fix)
+# Navigate to frontend directory and run linting with explicit paths
+(cd frontend && ./node_modules/.bin/eslint --fix 'src/**/*.{js,jsx}' && ./node_modules/.bin/prettier --write 'src/**/*.{js,jsx}')
+
+# Ensure node modules are installed in backend if necessary
+if [ -d "backend" ] && [ ! -d "backend/node_modules" ]; then
+  echo "Node modules not found in backend. Installing..."
+  cd backend && npm install
+fi
+
+# Navigate to backend directory and run linting (if it exists)
+if [ -d "backend" ]; then
+  (cd backend && ./node_modules/.bin/eslint --fix 'src/**/*.{js,jsx}')
+fi
